@@ -90,6 +90,39 @@ vec3 color_hitable_world(const ray& r, hitable *world) {
 	}
 }
 
+// now give things ideally matte surfaces... i.e. they reflect the ray at each bounde i na completely random direction
+// thye are not perfect absorbers... but rather reflect each ray in some random direction
+// to do this create the randomcircle and then send out another ray frmo the hitpoint in a rando mdirection
+// and then add what it hits too! // it is essentially the exact inverse of whatthe eye see.s. it's so cool to go and figure out
+// what is happening here, and itm akes perfect sense
+
+vec3 random_in_unit_sphere(){
+	vec3 p;
+	do {
+		p = 2.0 * vec3(drand48(), drand48(), drand48()) - vec3(1,1,1);
+	} while (dot(p,p) >=1.0);
+	return p;
+	// thi suses a rejection sampling method to get a random point on the circle through the probaly horrendously inefficient
+	// method of sampling random points and checking if they are on the circle(!)
+}
+
+// now a diffuse scattering color functino
+vec3 color_hitable_world_matte_surface(const ray& r, hitable *world){
+	float MAXFLOAT = 1e8;
+	hit_record rec;
+	if (world->hit(r,0.0, MAXFLOAT, rec)) {
+		vec3 target = rec.p + rec.normal + random_in_unit_sphere(); // creates new target vector
+		// so the p is the hitpoint, normal is normal right?
+		// the nrecursively calls this functoin to calculate the next bound!
+		return 0.5*color_hitable_world_matte_surface(ray(rec.p, target-rec.p), world);
+
+	}
+	else {
+		vec3 unit_direction = unit_vector(r.direction());
+		float t = 0.5*(unit_direction.y() + 1.0);
+		return (1.0 - t)*vec3(1.0, 1.0,1.0) + t*vec3(0.5,0.7,1.0);
+	}
+}
 
 int main_old() {
 	// start with simplest raytracer as bfore!
@@ -128,7 +161,7 @@ int main_without_camera() {
 	int nx = 200;
 	int ny = 100;
 	ofstream myfile;
-	myfile.open("hitable_world.txt");
+	myfile.open("matte_surface.txt");
 	myfile << "P3\n" << nx << " " << ny << "\n255\n";
 	hitable *list[2]; // create a new hitable list
 	list[0] = new sphere(vec3(0,0,-1), 0.5);
@@ -144,7 +177,8 @@ int main_without_camera() {
 			float v = float(j) / float(ny);
 
 			ray r(origin, lower_left_corner + u*horizontal + v*vertical);
-			vec3 col = color_hitable_world(r, world);
+			//vec3 col = color_hitable_world(r, world);
+			vec3 col = color_hitable_world_matte_surface(r, world);
 
 			int ir = int(255.99*col[0]);
 			int ig = int(255.99*col[1]);
@@ -161,7 +195,7 @@ int main_with_camera() {
 	int nx = 200;
 	int ny = 100;
 	ofstream myfile;
-	myfile.open("camera_samples.txt");
+	myfile.open("matte_surface.txt");
 	myfile << "P3\n" << nx << " " << ny << "\n255\n";
 	hitable *list[2]; // create a new hitable list
 	list[0] = new sphere(vec3(0,0,-1), 0.5);
@@ -179,7 +213,7 @@ int main_with_camera() {
 				float v = float(j + drand48()) / float(ny);
 				ray r = cam.get_ray(u,v);
 				vec3 p = r.point_at_parameter(2.0); // why arewe calculating this here? it's not used?
-				col += color_hitable_world(r, world);
+				col += color_hitable_world_matte_surface(r, world);
 			}
 			col /= float(num_samples);
 			int ir = int(255.99*col[0]);
@@ -188,6 +222,10 @@ int main_with_camera() {
 			myfile << ir << " " << ig << " " << ib << "\n";
 		}
 	}
+	// oh my god! it worked... and it automatically created shadowing... that's just amazing!
+	// see there's nothing really compliacted about this and I thought that it was some super arcane stuff
+	// it seems like that's a lesson I need to learn over and over again... just because you don't know smoething doens't mean
+	// it is this supercomplicated and scaty and arcane subject... it'susually quite simple and interesting!
 	myfile.close();
 	return 0;
 	// fantastically this works as well... this is amazing!
