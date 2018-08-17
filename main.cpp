@@ -4,10 +4,13 @@
 #include <fstream>
 #include "vec3.hpp"
 #include "ray.hpp"
+#include "material.hpp"
 #include "sphere.hpp"
 #include "hitable_list.hpp"
 #include "float.h" // what is this weird float.h file!?
 #include "camera.hpp"
+
+//#include "material.hpp"
 using namespace std;
 
 // okay, so just trace out a pattern... see if it works?
@@ -123,6 +126,28 @@ vec3 color_hitable_world_matte_surface(const ray& r, hitable *world){
 		return (1.0 - t)*vec3(1.0, 1.0,1.0) + t*vec3(0.5,0.7,1.0);
 	}
 }
+const float MAXFLOAT = 1e8;
+const int DEPTHLIMIT = 50;
+
+vec3 color_with_material(const ray& r, hitable *world, int depth) {
+	hit_record rec;
+	if (world ->hit(r, 0.01, MAXFLOAT, rec)){
+		ray scattered;
+		vec3 attenuation;
+		if (depth < DEPTHLIMIT && rec.mat_ptr->scatter(r,rec,attenuation, scattered)) {
+			return attenuation * color_with_material(scattered, world, depth+1);
+			// recursively invoke the function to calculate reflections around
+		}
+		else {
+			return vec3(0,0,0); // if greater than 50 reflections return nothing!
+		}
+	}
+	else {
+		vec3 unit_direction = unit_vector(r.direction());
+		float t = 0.5*(unit_direction.y() + 1.0);
+		return (1.0 - t)*vec3(1.0, 1.0,1.0) + t*vec3(0.5,0.7,1.0);
+	}
+}
 
 int main_old() {
 	// start with simplest raytracer as bfore!
@@ -195,7 +220,7 @@ int main_with_camera() {
 	int nx = 200;
 	int ny = 100;
 	ofstream myfile;
-	myfile.open("matte_surface.txt");
+	myfile.open("matte_surface_gamma_corrected.txt");
 	myfile << "P3\n" << nx << " " << ny << "\n255\n";
 	hitable *list[2]; // create a new hitable list
 	list[0] = new sphere(vec3(0,0,-1), 0.5);
@@ -216,6 +241,8 @@ int main_with_camera() {
 				col += color_hitable_world_matte_surface(r, world);
 			}
 			col /= float(num_samples);
+			// to gamma correct
+			col = vec3(sqrt(col[0]), sqrt(col[1]), sqrt(col[2]));
 			int ir = int(255.99*col[0]);
 			int ig = int(255.99*col[1]);
 			int ib = int(255.99*col[2]);
@@ -232,6 +259,44 @@ int main_with_camera() {
 
 }
 
+int main_with_metal() {
+	int nx = 200;
+	int ny = 100;
+	ofstream myfile;
+	myfile.open("material_test.txt");
+	myfile << "P3\n" << nx << " " << ny << "\n255\n";
+	hitable *list[4]; // create a new hitable list
+	list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.8,0.3,0.3)));
+	list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8,0.8,0.0)));
+	list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8,0.6,0.2)));
+	list[3] = new sphere(vec3(-1,0,-1), 0.5, new metal(vec3(0.8,0.8,0.8)));
+	hitable *world = new hitable_list(list, 2);
+	camera cam;
+	int num_samples = 100;
+	for (int j = ny-1; j>=0; j--){
+		for (int i = 0; i<nx; i++){
+			vec3 col(0,0,0);
+			for (int s = 0; s < num_samples; s++) {
+				float u = float(i + drand48())/ float(nx);
+				float v = float(j + drand48()) / float(ny);
+				ray r = cam.get_ray(u,v);
+				vec3 p = r.point_at_parameter(2.0); // why arewe calculating this here? it's not used?
+				col += color_with_material(r, world,0);
+			}
+			col /= float(num_samples);
+			// to gamma correct
+			col = vec3(sqrt(col[0]), sqrt(col[1]), sqrt(col[2]));
+			int ir = int(255.99*col[0]);
+			int ig = int(255.99*col[1]);
+			int ib = int(255.99*col[2]);
+			myfile << ir << " " << ig << " " << ib << "\n";
+		}
+	}
+	myfile.close();
+	return 0;
+
+}
+
 int main() {
-	return main_with_camera();
+	return main_with_metal();
 }
