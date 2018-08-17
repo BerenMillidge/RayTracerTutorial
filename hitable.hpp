@@ -6,10 +6,13 @@
 
 #include "ray.hpp"
 
+class material; // alert the compiler that the reference to material is a class pointer
+
 struct hit_record {
 	float t;
 	vec3 p;
-	vec3 normal; 
+	vec3 normal;
+	material *mat_ptr;
 };
 // this just stores all the information about the hit that we need for the moment
 
