@@ -4,14 +4,15 @@
 #include <fstream>
 #include "vec3.hpp"
 #include "ray.hpp"
-#include "material.hpp"
 #include "sphere.hpp"
 #include "hitable_list.hpp"
 #include "float.h" // what is this weird float.h file!?
 #include "camera.hpp"
-
-//#include "material.hpp"
 using namespace std;
+
+// somehow doing this has just exploded everything... and I have no idea why or what? it's so confusing to me...
+// what am I doing wrong... why has all of this caused the compilerto explode when it worked before?
+// even with the hitable object list?
 
 // okay, so just trace out a pattern... see if it works?
 // this returns a color vector given a ray... i nthe simple case? of a blank background
@@ -98,16 +99,6 @@ vec3 color_hitable_world(const ray& r, hitable *world) {
 // to do this create the randomcircle and then send out another ray frmo the hitpoint in a rando mdirection
 // and then add what it hits too! // it is essentially the exact inverse of whatthe eye see.s. it's so cool to go and figure out
 // what is happening here, and itm akes perfect sense
-
-vec3 random_in_unit_sphere(){
-	vec3 p;
-	do {
-		p = 2.0 * vec3(drand48(), drand48(), drand48()) - vec3(1,1,1);
-	} while (dot(p,p) >=1.0);
-	return p;
-	// thi suses a rejection sampling method to get a random point on the circle through the probaly horrendously inefficient
-	// method of sampling random points and checking if they are on the circle(!)
-}
 
 // now a diffuse scattering color functino
 vec3 color_hitable_world_matte_surface(const ray& r, hitable *world){
@@ -298,5 +289,7 @@ int main_with_metal() {
 }
 
 int main() {
+	//return main_with_metal();
 	return main_with_metal();
+	// I'm not sure what's going on here but I'm getting segfaults!
 }

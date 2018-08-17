@@ -7,9 +7,12 @@
 #include "ray.hpp"
 #include "hitable.hpp"
 
+// I don't know why it can't find this... why are there linking errors everywhere... it's so  frustrating
+// ebcaues these things do existand I don't know why I'm having such a huge issue with them!
+
 class material {
 public: 
-	virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray&scattered) const = 0;
+	virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const = 0;
 
 };
 

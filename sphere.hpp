@@ -8,11 +8,13 @@
 
 class sphere: public hitable { //extends hitable
 public:
-	sphere() {};
-	sphere(vec3 cen, float r): center(cen), radius(r) {}; // not sure how these type definitions work
+	sphere() {}
+	sphere(vec3 cen, float r, material* mat): center(cen), radius(r), _material(mat) {};
+	sphere(vec3 cen, float r): center(cen), radius(r)  {}; // not sure how these type definitions work
 	virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
 	vec3 center;
 	float radius;
+	material* _material;
 };
 
 bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
